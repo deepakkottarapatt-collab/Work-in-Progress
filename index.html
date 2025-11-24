@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Deepak S Kottarapatt Sasipal – Portfolio</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#000;
+      --fg:#fff;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    html,body{
+      background:var(--bg);
+      color:var(--fg);
+      font-family:"Century Gothic",system-ui,sans-serif;
+      overflow-x:hidden;
+      height:100%;
+    }
+
+    canvas{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index:0;
+      display:block;
+      pointer-events:none;
+    }
+
+    .hero{
+      position:relative;
+      z-index:2;
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+    }
+
+    .hero-title{
+      font-size:clamp(2.5rem,5vw,4.8rem);
+      letter-spacing:0.15em;
+      text-transform:uppercase;
+    }
+
+    .hero-sub{
+      margin-top:0.4rem;
+      letter-spacing:0.12em;
+      opacity:0.8;
+      font-size:0.85rem;
+      text-transform:uppercase;
+    }
+
+    #hint{
+      position:fixed;
+      bottom:30px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:0.75rem;
+      opacity:0;
+      letter-spacing:0.2em;
+      text-transform:uppercase;
+      transition:opacity 0.4s ease;
+      z-index:3;
+      pointer-events:none;
+    }
+    #hint.visible{opacity:0.8;}
+
+    .scroll-indicator{
+      position:absolute;
+      bottom:20px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:0.7rem;
+      opacity:0.6;
+      letter-spacing:0.2em;
+    }
+
+    /* CV Section - unchanged styling from Checkpoint 2 WIP */
+    #cv-section{
+      position:relative;
+      z-index:1;
+      padding:6rem 6vw;
+      background:rgba(0,0,0,0.95);
+      min-height:100vh;
+    }
+
+    .cv-panel{
+      max-width:1100px;
+      margin:0 auto;
+      padding:2rem;
+      border-radius:20px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.15);
+      backdrop-filter:blur(12px);
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="c"></canvas>
+
+  <section class="hero">
+    <div class="hero-title">DEEPAK&nbsp;S&nbsp;KOTTARAPATT&nbsp;SASIPAL</div>
+    <div class="hero-sub">Architect · BIM Specialist · AI Enthusiast</div>
+    <div class="scroll-indicator">SCROLL TO VIEW CV ↓</div>
+  </section>
+
+  <div id="hint">LEFT CLICK TO BEGIN</div>
+
+  <section id="cv-section">
+    <div class="cv-panel">
+      <h2>Curriculum Vitae</h2>
+      <p>Full CV content preserved from Checkpoint 2 WIP...</p>
+    </div>
+  </section>
+
+<script src="sandbox:/mnt/data/dot-map.js"></script>
+<script>
+/* ====== Smooth Intro to Mesh Transition Using DOT_MAP ====== */
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let W = window.innerWidth;
+let H = window.innerHeight;
+canvas.width = W;
+canvas.height = H;
+
+window.addEventListener('resize', () => {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+});
+
+const particles = [];
+const INTRO_DELAY = 5000; // 5 sec wait before clicking allowed
+let readyToExplode = false;
+
+let state = "intro";
+let startTime = performance.now();
+let explosionStart = null;
+
+const mouse = {x: null, y: null};
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+function layoutParticles(){
+  particles.length = 0;
+  DOT_MAP.forEach(([nx, ny, a]) => {
+    particles.push({
+      baseX: nx * W * 0.8 + W * 0.1,
+      baseY: ny * H * 0.8 + H * 0.1,
+      x: 0, y: 0, vx: 0, vy: 0,
+      alpha: a, r: 1.2 + Math.random()
+    });
+  });
+  particles.forEach(p => {
+    p.x = p.baseX;
+    p.y = p.baseY;
+  });
+}
+
+function beginExplosion(cx, cy){
+  explosionStart = performance.now();
+  particles.forEach(p => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const dist = Math.hypot(dx, dy) || 1;
+    p.vx = (dx/dist) * (4 + Math.random()*3);
+    p.vy = (dy/dist) * (4 + Math.random()*3);
+  });
+}
+
+window.addEventListener('click', e => {
+  if (state === "intro" && readyToExplode){
+    beginExplosion(e.clientX, e.clientY);
+    state = "explode";
+    document.getElementById('hint').classList.remove('visible');
+  }
+});
+
+function animate(){
+  ctx.clearRect(0,0,W,H);
+  const now = performance.now();
+
+  if (!readyToExplode && now - startTime > INTRO_DELAY){
+    readyToExplode = true;
+    document.getElementById('hint').classList.add('visible');
+  }
+
+  particles.forEach(p => {
+    if (state === "intro"){
+      p.x = p.baseX + Math.sin(now/900) * 0.6;
+      p.y = p.baseY + Math.cos(now/1000) * 0.6;
+    }
+    else if (state === "explode") {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vx *= 0.95;
+      p.vy *= 0.95;
+    }
+  });
+
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  if(state === "explode" && now - explosionStart > 1800){
+    state = "mesh";
+  }
+
+  if(state === "mesh"){
+    // Placeholder for Checkpoint 2 particle mesh
+    // You can drop in your mesh simulation JS here.
+  }
+
+  requestAnimationFrame(animate);
+}
+
+layoutParticles();
+animate();
+</script>
+
+</body>
+</html>
